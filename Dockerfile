@@ -6,6 +6,8 @@ RUN npm install
 COPY . .
 
 # A MÁGICA: Bypassa o TypeScript (tsc) e constrói direto!
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 RUN npx vite build
 
 # Estágio 2: Servidor Web (Nginx) super leve para rodar o site

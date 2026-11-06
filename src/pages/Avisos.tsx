@@ -12,7 +12,7 @@ export default function Avisos() {
   // 1. FUNÇÃO PARA PUXAR OS AVISOS DO BANCO DE DADOS
   const carregarAvisos = async () => {
     try {
-      const res = await fetch(`http://192.168.18.213:8081/api/avisos/ativos`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/avisos/ativos`);
       if (res.ok) {
         const data = await res.json();
         // Inverte para o mais recente aparecer primeiro
@@ -37,7 +37,7 @@ export default function Avisos() {
 
     setCarregando(true);
     try {
-      const res = await fetch(`http://192.168.18.213:8081/api/avisos`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/avisos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -70,7 +70,7 @@ export default function Avisos() {
     if (!window.confirm("Tem certeza que deseja apagar este comunicado? Ele vai sumir dos aplicativos imediatamente.")) return;
 
     try {
-      const res = await fetch(`http://192.168.18.213:8081/api/avisos/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/avisos/${id}`, {
         method: 'DELETE'
       });
       if (res.ok) {

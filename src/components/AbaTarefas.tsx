@@ -3,7 +3,7 @@ import Layout from '../components/Layout';
 import { Megaphone, BellRing, AlertTriangle, Send, CheckCircle2, Clock, Users, Target, Trash2, ListTodo } from 'lucide-react';
 
 export default function Tarefas() {
-  const API_JAVA = 'http://localhost:8081/api';
+  const API_JAVA = `${import.meta.env.VITE_API_URL}/api`;
 
   const [avisos, setAvisos] = useState<any[]>([]);
   const [carregando, setCarregando] = useState(false);
