@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"name": "Sistema_novo_nordex",
+			"path": "../../.."
+		}
+	],
+	"settings": {
+		"java.configuration.updateBuildConfiguration": "interactive"
+	}
+}
