@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }: any) => {
   const logout = () => {
     setUsuario(null);
     localStorage.removeItem('@NordexAdminAuth');
+    localStorage.removeItem('nordex_token');
     window.location.hash = '#/';
   };
 
