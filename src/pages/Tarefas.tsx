@@ -49,7 +49,7 @@ export default function Tarefas() {
   const carregarUsuarios = async () => {
     try {
       const time = new Date().getTime();
-      const res = await fetch(`${API_JAVA}/supervisao/equipe?t=${time}`, { cache: 'no-store' });
+      const res = await fetch(`${API_JAVA}/equipe/operacional?t=${time}`, { cache: 'no-store' });
       if (res.ok) { setUsuariosCadastrados(await res.json()); }
     } catch (erro) { console.error("Erro ao buscar usuários:", erro); }
   };

@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext<any>(null);
+const API_BASE = `${(import.meta.env.VITE_API_URL || 'http://192.168.18.213:8081').replace(/\/+$/, '')}/api`;
 
-// Regras padrão caso seja a primeira vez abrindo o sistema
+// Fallback local até a matriz oficial do servidor carregar
 const MATRIZ_PADRAO = {
-  'Operação': { 'ADMIN': true, 'ADMINISTRADOR': true, 'SUPERVISOR': true, 'LIDER_OPERACIONAL': true, 'OPERACIONAL': true },
-  'Gestão de Frota': { 'ADMIN': true, 'ADMINISTRADOR': true, 'SUPERVISOR': true, 'LIDER_OPERACIONAL': true, 'OPERACIONAL': false },
-  'Financeiro': { 'ADMIN': true, 'ADMINISTRADOR': true, 'SUPERVISOR': false, 'LIDER_OPERACIONAL': false, 'OPERACIONAL': false },
-  'Supervisão': { 'ADMIN': true, 'ADMINISTRADOR': true, 'SUPERVISOR': true, 'LIDER_OPERACIONAL': false, 'OPERACIONAL': false },
+  'Operação': { 'ADMIN': true, 'ADMINISTRADOR': true, 'SUPERVISOR': true, 'LIDER_OPERACIONAL': true, 'OPERACIONAL': true, 'FINANCEIRO': false, 'ENTREGADOR': true },
+  'Gestão de Frota': { 'ADMIN': true, 'ADMINISTRADOR': true, 'SUPERVISOR': true, 'LIDER_OPERACIONAL': true, 'OPERACIONAL': false, 'FINANCEIRO': false, 'ENTREGADOR': false },
+  'Financeiro': { 'ADMIN': true, 'ADMINISTRADOR': true, 'SUPERVISOR': false, 'LIDER_OPERACIONAL': false, 'OPERACIONAL': false, 'FINANCEIRO': true, 'ENTREGADOR': false },
+  'Supervisão': { 'ADMIN': true, 'ADMINISTRADOR': true, 'SUPERVISOR': true, 'LIDER_OPERACIONAL': false, 'OPERACIONAL': false, 'FINANCEIRO': false, 'ENTREGADOR': false },
+  'Área de Sorteio': { 'ADMIN': true, 'ADMINISTRADOR': true, 'SUPERVISOR': true, 'LIDER_OPERACIONAL': true, 'OPERACIONAL': true, 'FINANCEIRO': false, 'ENTREGADOR': false },
 };
 
 export const AuthProvider = ({ children }: any) => {
@@ -21,16 +23,34 @@ export const AuthProvider = ({ children }: any) => {
     return null;
   });
 
-  // 2. MATRIZ DE PERMISSÕES (O truque para funcionar sem o Java por enquanto)
+  // Matriz em cache local; o servidor é a fonte oficial das permissões.
   const [permissoesGlobais, setPermissoesGlobais] = useState(() => {
     const permSalvas = localStorage.getItem('@NordexPermissoes');
     return permSalvas ? JSON.parse(permSalvas) : MATRIZ_PADRAO;
   });
+  const [carregandoPermissoes, setCarregandoPermissoes] = useState(false);
 
   // Salva no navegador sempre que as permissões mudarem
   useEffect(() => {
     localStorage.setItem('@NordexPermissoes', JSON.stringify(permissoesGlobais));
   }, [permissoesGlobais]);
+
+  useEffect(() => {
+    if (!usuario) {
+      setCarregandoPermissoes(false);
+      return;
+    }
+    let ativo = true;
+    setCarregandoPermissoes(true);
+    fetch(`${API_BASE}/permissoes`, { cache: 'no-store' })
+      .then(resposta => resposta.ok ? resposta.json() : null)
+      .then(matriz => {
+        if (ativo && matriz && typeof matriz === 'object') setPermissoesGlobais(matriz);
+      })
+      .catch(erro => console.error('Não foi possível carregar as permissões do servidor:', erro))
+      .finally(() => { if (ativo) setCarregandoPermissoes(false); });
+    return () => { ativo = false; };
+  }, [usuario]);
 
   const login = (dadosUsuario: any) => {
     setUsuario(dadosUsuario);
@@ -54,7 +74,7 @@ export const AuthProvider = ({ children }: any) => {
   return (
     <AuthContext.Provider value={{ 
       usuario, login, logout, 
-      permissoesGlobais, setPermissoesGlobais, temAcesso 
+      permissoesGlobais, setPermissoesGlobais, temAcesso, carregandoPermissoes
     }}>
       {children}
     </AuthContext.Provider>

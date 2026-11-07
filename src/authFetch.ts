@@ -1,4 +1,5 @@
-const API_BASE = `${import.meta.env.VITE_API_URL ?? ''}/api`;
+const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://192.168.18.213:8081').replace(/\/+$/, '');
+const API_BASE = `${API_ORIGIN}/api`;
 const CHAVE_TOKEN = 'nordex_token';
 const CHAVE_USUARIO = '@NordexAdminAuth';
 const fetchOriginal = window.fetch.bind(window);

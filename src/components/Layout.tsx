@@ -53,10 +53,12 @@ export default function Layout({ children, titulo }: { children: React.ReactNode
         </div>
 
         <nav className="flex-1 px-3 py-4 overflow-y-auto custom-scrollbar space-y-1">
-          <Link to="/dashboard" className={`flex items-center gap-[10px] px-3 py-2 rounded-lg transition-all ${isActive("/dashboard") ? 'bg-[#f97316] text-white shadow-sm' : 'text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a2540] hover:text-slate-900 dark:hover:text-[#f1f5f9]'}`}>
-            <LayoutDashboard size={15} />
-            <span className="text-[12px] font-bold">Visão Geral</span>
-          </Link>
+          {podeVerOperacao && (
+            <Link to="/dashboard" className={`flex items-center gap-[10px] px-3 py-2 rounded-lg transition-all ${isActive("/dashboard") ? 'bg-[#f97316] text-white shadow-sm' : 'text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a2540] hover:text-slate-900 dark:hover:text-[#f1f5f9]'}`}>
+              <LayoutDashboard size={15} />
+              <span className="text-[12px] font-bold">Visão Geral</span>
+            </Link>
+          )}
           
           {podeVerOperacao && (
             <>

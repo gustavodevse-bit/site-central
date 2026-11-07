@@ -7,11 +7,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from "../contexts/AuthContext"; // 🟢 IMPORTAÇÃO DO CONTEXTO AQUI!
 
-const API_URL = `${import.meta.env.VITE_API_URL}/api/supervisao`;
+const API_BASE = `${(import.meta.env.VITE_API_URL || 'http://192.168.18.213:8081').replace(/\/+$/, '')}/api`;
+const API_URL = `${API_BASE}/supervisao`;
 
 export default function Supervisao() {
   // 🟢 PUXANDO A MATRIZ DE PERMISSÕES DO "CÉREBRO" DO SISTEMA
-  const { permissoesGlobais, setPermissoesGlobais } = useAuth();
+  const { permissoesGlobais, setPermissoesGlobais, usuario } = useAuth();
+  const podeEditarPermissoes = ['ADMIN', 'ADMINISTRADOR'].includes(String(usuario?.cargo || '').toUpperCase());
 
   // ESTADOS DOS DADOS
   const [equipe, setEquipe] = useState<any[]>([]);
@@ -25,7 +27,7 @@ export default function Supervisao() {
   const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
   const [menuCargoAberto, setMenuCargoAberto] = useState<number | null>(null);
 
-  const cargosHead = ['ADMIN', 'ADMINISTRADOR', 'SUPERVISOR', 'LIDER_OPERACIONAL', 'OPERACIONAL'];
+  const cargosHead = ['ADMIN', 'ADMINISTRADOR', 'SUPERVISOR', 'LIDER_OPERACIONAL', 'OPERACIONAL', 'FINANCEIRO', 'ENTREGADOR'];
 
   // ESTADOS DE MODAIS
   const [modalNovoUsuario, setModalNovoUsuario] = useState(false);
@@ -188,10 +190,21 @@ export default function Supervisao() {
     }));
   };
 
-  const salvarPermissoesNoServidor = () => {
-    // Como o useEffect no AuthContext já salva no localStorage, 
-    // aqui é só mostrar a mensagem (futuramente ligamos ao Java aqui)
-    showToast('Matriz de permissões atualizada!', 'sucesso');
+  const salvarPermissoesNoServidor = async () => {
+    if (!podeEditarPermissoes) return showToast('Somente ADMIN e ADMINISTRADOR podem alterar a matriz.', 'erro');
+    try {
+      const resposta = await fetch(`${API_BASE}/permissoes`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(permissoesGlobais),
+      });
+      if (!resposta.ok) throw new Error(await resposta.text());
+      setPermissoesGlobais(await resposta.json());
+      showToast('Matriz salva no servidor!', 'sucesso');
+    } catch (erro) {
+      console.error('Erro ao salvar matriz:', erro);
+      showToast('Não foi possível salvar as permissões no servidor.', 'erro');
+    }
   };
 
   const equipeFiltrada = equipe.filter(u => u.nome?.toLowerCase().includes(buscaEquipe.toLowerCase()) || u.email?.toLowerCase().includes(buscaEquipe.toLowerCase()));
@@ -323,12 +336,16 @@ export default function Supervisao() {
                               : user.cargo === 'SUPERVISOR' ? 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/30' 
                               : user.cargo === 'ADMINISTRADOR' ? 'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/30' 
                               : user.cargo === 'LIDER_OPERACIONAL' ? 'bg-[#f97316]/10 text-[#f97316] border-[#f97316]/30'
+                              : user.cargo === 'FINANCEIRO' ? 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30'
+                              : user.cargo === 'ENTREGADOR' ? 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-500/10 dark:text-slate-300 dark:border-slate-500/30'
                               : 'bg-white text-slate-600 border-slate-300 dark:bg-[#0f1d33] dark:text-[#94a3b8] dark:border-[#253555]'}`}
                           >
                             <span className="truncate pr-2">
                               {user.cargo === 'ADMINISTRADOR' ? 'Administração'
                                 : user.cargo === 'SUPERVISOR' ? 'Supervisor'
                                 : user.cargo === 'LIDER_OPERACIONAL' ? 'Líder Oper'
+                                : user.cargo === 'FINANCEIRO' ? 'Financeiro'
+                                : user.cargo === 'ENTREGADOR' ? 'Entregador'
                                 : user.cargo === 'ADMIN' ? 'Admin'
                                 : 'Operador'}
                             </span>
@@ -342,6 +359,8 @@ export default function Supervisao() {
                                 {[
                                   { val: 'OPERACIONAL', label: 'Operador' },
                                   { val: 'LIDER_OPERACIONAL', label: 'Líder Operacional' },
+                                  { val: 'FINANCEIRO', label: 'Financeiro' },
+                                  { val: 'ENTREGADOR', label: 'Entregador' },
                                   { val: 'SUPERVISOR', label: 'Supervisor' },
                                   { val: 'ADMINISTRADOR', label: 'Administração' },
                                   { val: 'ADMIN', label: 'Admin' }
@@ -429,13 +448,13 @@ export default function Supervisao() {
                     <h3 className="text-[14px] font-black text-slate-800 dark:text-[#f1f5f9] flex items-center gap-2"><Lock size={16} className="text-purple-500"/> Matriz de Acessos</h3>
                     <p className="text-[11px] text-slate-500 dark:text-[#94a3b8]">Defina quais módulos cada cargo da Nordex pode visualizar e operar.</p>
                   </div>
-                  <button onClick={salvarPermissoesNoServidor} className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-[8px] font-bold text-[11px] uppercase tracking-widest flex items-center gap-2 transition-colors shadow-sm">
+                  <button onClick={salvarPermissoesNoServidor} disabled={!podeEditarPermissoes} title={!podeEditarPermissoes ? 'Somente ADMIN e ADMINISTRADOR podem alterar a matriz.' : undefined} className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2 rounded-[8px] font-bold text-[11px] uppercase tracking-widest flex items-center gap-2 transition-colors shadow-sm">
                     <Save size={14}/> Salvar Matriz
                   </button>
                </div>
                
                <div className="flex-1 overflow-auto custom-scrollbar p-5">
-                  <table className="w-full text-left border-collapse min-w-[700px]">
+                  <table className="w-full text-left border-collapse min-w-[1120px]">
                      <thead>
                        <tr>
                          <th className="pb-4 pt-2 px-4 border-b border-slate-200 dark:border-[#253555] font-black text-[10px] uppercase tracking-widest text-slate-400 dark:text-[#6b7280]">Módulos do Sistema</th>
@@ -455,13 +474,13 @@ export default function Supervisao() {
                                <td key={cargo} className="py-3 px-4 border-b border-slate-100 dark:border-[#1a2540]/50 text-center">
                                   <button 
                                      onClick={() => togglePermissao(modulo, cargo)}
-                                     disabled={cargo === 'ADMIN'} // ADMIN SEMPRE TEM ACESSO
+                                     disabled={cargo === 'ADMIN' || !podeEditarPermissoes}
                                      className={`w-5 h-5 rounded-[4px] border flex items-center justify-center transition-all mx-auto
                                        ${permissoesGlobais[modulo][cargo] 
                                          ? 'bg-[#10b981] border-[#10b981] text-white shadow-sm' 
                                          : 'bg-slate-100 dark:bg-[#0f1d33] border-slate-300 dark:border-[#253555] text-transparent hover:border-[#3b82f6]'
                                        }
-                                       ${cargo === 'ADMIN' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-110'}
+                                       ${cargo === 'ADMIN' || !podeEditarPermissoes ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-110'}
                                      `}
                                   >
                                      <CheckCircle size={12} strokeWidth={4} />
@@ -508,6 +527,8 @@ export default function Supervisao() {
                 <select value={novoUsuarioCargo} onChange={e=>setNovoUsuarioCargo(e.target.value)} className="w-full bg-slate-50 dark:bg-[#1a2540] border border-slate-200 dark:border-[#253555] rounded-[8px] px-3 py-2 text-[11px] font-bold text-slate-800 dark:text-[#e2e8f0] outline-none focus:border-[#3b82f6] cursor-pointer">
                   <option value="OPERACIONAL">Operador (Padrão)</option>
                   <option value="LIDER_OPERACIONAL">Líder Operacional</option>
+                  <option value="FINANCEIRO">Financeiro</option>
+                  <option value="ENTREGADOR">Entregador</option>
                   <option value="SUPERVISOR">Supervisor (Logística)</option>
                   <option value="ADMINISTRADOR">Administração (Escritório)</option>
                   <option value="ADMIN">Admin (Diretoria)</option>

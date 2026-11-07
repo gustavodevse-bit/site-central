@@ -16,9 +16,23 @@ import Reversa from "./pages/Reversa";
 import Avisos from "./pages/Avisos"; 
 import Advertencias from './pages/Advertencias';
 
-const RotaPrivada = ({ children }: { children: React.ReactElement }) => {
-  const { usuario } = useAuth();
-  return usuario ? children : <Navigate replace to="/" />;
+const ROTA_INICIAL = (temAcesso: (modulo: string, cargo: string) => boolean, cargo: string) => {
+  if (temAcesso('Operação', cargo)) return '/dashboard';
+  if (temAcesso('Gestão de Frota', cargo)) return '/frota';
+  if (temAcesso('Financeiro', cargo)) return '/pagamentos';
+  if (temAcesso('Supervisão', cargo)) return '/supervisao';
+  return '/perfil';
+};
+
+const RotaPrivada = ({ children, modulo }: { children: React.ReactElement; modulo?: string }) => {
+  const { usuario, temAcesso, carregandoPermissoes } = useAuth();
+  if (!usuario) return <Navigate replace to="/" />;
+  if (modulo && carregandoPermissoes) return <div className="w-full h-screen flex items-center justify-center text-sm text-slate-500">Carregando permissões...</div>;
+  const cargo = String(usuario.cargo || 'OPERACIONAL').toUpperCase();
+  if (modulo && !temAcesso(modulo, cargo)) {
+    return <Navigate replace to={ROTA_INICIAL(temAcesso, cargo)} />;
+  }
+  return children;
 };
 
 function App() {
@@ -27,34 +41,34 @@ function App() {
       <HashRouter>
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route path="/dashboard" element={<RotaPrivada><Dashboard /></RotaPrivada>} />
-          <Route path="/rastreio" element={<RotaPrivada><Rastreio /></RotaPrivada>} /> 
-          <Route path="/frota" element={<RotaPrivada><Frota /></RotaPrivada>} />
+          <Route path="/dashboard" element={<RotaPrivada modulo="Operação"><Dashboard /></RotaPrivada>} />
+          <Route path="/rastreio" element={<RotaPrivada modulo="Operação"><Rastreio /></RotaPrivada>} /> 
+          <Route path="/frota" element={<RotaPrivada modulo="Gestão de Frota"><Frota /></RotaPrivada>} />
           
           {/* 🟢 ROTA DE CUSTOS ADICIONADA AQUI */}
           <Route path="/custos" element={
-            <RotaPrivada>
+            <RotaPrivada modulo="Financeiro">
               <Layout titulo="Gestão de Custos e Relatórios">
                 <Custos />
               </Layout>
             </RotaPrivada>
           } />
           
-          <Route path="/pagamentos" element={<RotaPrivada><Pagamentos /></RotaPrivada>} />
-          <Route path="/supervisao" element={<RotaPrivada><Supervisao /></RotaPrivada>} />
+          <Route path="/pagamentos" element={<RotaPrivada modulo="Financeiro"><Pagamentos /></RotaPrivada>} />
+          <Route path="/supervisao" element={<RotaPrivada modulo="Supervisão"><Supervisao /></RotaPrivada>} />
           <Route path="/perfil" element={<RotaPrivada><Perfil /></RotaPrivada>} />
-          <Route path="/tarefas" element={<RotaPrivada><Tarefas /></RotaPrivada>} /> 
-          <Route path="/reversa" element={<RotaPrivada><Reversa /></RotaPrivada>} />
+          <Route path="/tarefas" element={<RotaPrivada modulo="Operação"><Tarefas /></RotaPrivada>} /> 
+          <Route path="/reversa" element={<RotaPrivada modulo="Operação"><Reversa /></RotaPrivada>} />
           
           <Route path="/advertencias" element={
-            <RotaPrivada>
+            <RotaPrivada modulo="Supervisão">
               <Layout titulo="Registro de Punições">
                 <Advertencias />
               </Layout>
             </RotaPrivada>
           } />
           
-          <Route path="/avisos" element={<RotaPrivada><Avisos /></RotaPrivada>} /> 
+          <Route path="/avisos" element={<RotaPrivada modulo="Operação"><Avisos /></RotaPrivada>} /> 
         </Routes>
       </HashRouter>
     </AuthProvider>
