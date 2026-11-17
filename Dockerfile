@@ -1,8 +1,8 @@
-# Estágio 1: Construir o React (Node 20)
-FROM node:20-alpine AS build
+# Estágio 1: Construir o React com uma versão LTS mantida do Node.js.
+FROM node:24-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 COPY . .
 
 # A MÁGICA: Bypassa o TypeScript (tsc) e constrói direto!
