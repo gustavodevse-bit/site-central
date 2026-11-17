@@ -42,7 +42,11 @@ export const AuthProvider = ({ children }: any) => {
     }
     let ativo = true;
     setCarregandoPermissoes(true);
-    fetch(`${API_BASE}/permissoes`, { cache: 'no-store' })
+    const headers = new Headers();
+    const token = localStorage.getItem('nordex_token');
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+
+    fetch(`${API_BASE}/permissoes`, { cache: 'no-store', headers })
       .then(resposta => resposta.ok ? resposta.json() : null)
       .then(matriz => {
         if (ativo && matriz && typeof matriz === 'object') setPermissoesGlobais(matriz);
